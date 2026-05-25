@@ -19,6 +19,7 @@ import {
   SessionsPDFRequest,
 } from "./sessions.schema.js";
 import { BrowserEventType, EmitEvent } from "../../types/enums.js";
+import { env } from "../../env.js";
 
 async function routes(server: FastifyInstance) {
   server.get(
@@ -32,6 +33,14 @@ async function routes(server: FastifyInstance) {
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
+      if (
+        env.DISABLE_IDLE_BROWSER &&
+        (server.sessionService.activeSession.status !== "live" ||
+          server.sessionService.activeSession.isSelenium)
+      ) {
+        return reply.send({ status: "ok" });
+      }
+
       if (!server.cdpService.isRunning()) {
         return reply.status(503).send({ status: "service_unavailable" });
       }

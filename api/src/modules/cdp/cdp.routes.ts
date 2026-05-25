@@ -19,6 +19,10 @@ async function routes(server: FastifyInstance) {
       request: FastifyRequest<{ Querystring: z.infer<typeof cdpSchemas.GetDevtoolsUrlSchema> }>,
       reply: FastifyReply,
     ) => {
+      if (!server.cdpService.isRunning()) {
+        await server.cdpService.launch();
+      }
+
       return reply.redirect(
         `${server.cdpService.getDebuggerUrl()}?ws=${server.cdpService
           .getDebuggerWsUrl(request.query.pageId)
