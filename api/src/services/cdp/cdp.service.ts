@@ -143,9 +143,9 @@ export class CDPService extends EventEmitter {
     this.currentSessionConfig = null;
     this.shuttingDown = false;
 
-    // Initialize timezone fetcher for cold start
-    const timezoneFetcher = new TimezoneFetcher(logger);
-    const coldStartTimezone = timezoneFetcher.getTimezone(undefined, this.defaultTimezone);
+    const coldStartTimezone = env.DISABLE_IDLE_BROWSER
+      ? Promise.resolve(this.defaultTimezone)
+      : new TimezoneFetcher(logger).getTimezone(undefined, this.defaultTimezone);
 
     this.defaultLaunchConfig = {
       options: {
@@ -228,7 +228,7 @@ export class CDPService extends EventEmitter {
   }
 
   public isRunning(): boolean {
-    return this.browserInstance?.process() !== null;
+    return !!this.browserInstance?.process();
   }
 
   public getTargetId(page: Page) {
@@ -1081,6 +1081,10 @@ export class CDPService extends EventEmitter {
     }
 
     if (!this.wsEndpoint) {
+      await this.launch();
+    }
+
+    if (!this.wsEndpoint) {
       throw new Error(`WebSocket endpoint not available. Ensure the browser is launched first.`);
     }
 
@@ -1332,7 +1336,11 @@ export class CDPService extends EventEmitter {
       await this.pluginManager.onAfterSessionEnd(sessionConfig);
     }
 
-    // Relaunch the idle browser
+    if (env.DISABLE_IDLE_BROWSER) {
+      this.logger.info("Idle browser relaunch skipped because DISABLE_IDLE_BROWSER is enabled");
+      return;
+    }
+
     await this.launch(this.defaultLaunchConfig);
   }
 
