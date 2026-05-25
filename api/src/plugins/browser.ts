@@ -69,6 +69,11 @@ const browserInstancePlugin: FastifyPluginAsync = async (fastify, _options) => {
   );
 
   fastify.addHook("onListen", async function () {
+    if (env.DISABLE_IDLE_BROWSER) {
+      this.log.info("Idle browser launch skipped because DISABLE_IDLE_BROWSER is enabled");
+      return;
+    }
+
     this.log.info("Launching default browser...");
     await cdpService.launch();
   });

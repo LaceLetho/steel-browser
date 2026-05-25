@@ -4,6 +4,7 @@ import { WebSocketServer } from "ws";
 import { WebSocketRegistryService } from "../../services/websocket-registry.service.js";
 import { WebSocketHandler, WebSocketHandlerContext } from "../../types/websocket.js";
 import { defaultHandlers } from "./handlers/index.js";
+import { env } from "../../env.js";
 
 export interface BrowserSocketOptions {
   customHandlers?: WebSocketHandler[];
@@ -16,7 +17,7 @@ const browserWebSocket: FastifyPluginAsync<BrowserSocketOptions> = async (
   fastify: FastifyInstance,
   options: BrowserSocketOptions,
 ) => {
-  if (!fastify.cdpService.isRunning()) {
+  if (!env.DISABLE_IDLE_BROWSER && !fastify.cdpService.isRunning()) {
     fastify.log.info("Launching browser...");
     await fastify.cdpService.launch();
     fastify.log.info("Browser launched successfully");
